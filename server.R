@@ -3,6 +3,7 @@ library(shiny)
 library(DT)
 library(googlesheets)
 library(rsconnect)
+library(dplyr)
 
 fields <- c("line1", "line2", "line3","author")
 fields2 <- c("haiku", "author")
@@ -40,7 +41,7 @@ shinyServer(function(input, output, session) {
   
   loadData2 <- function() {
     sheet2 <- gs_title(table2)
-    gs_read_csv(sheet2)
+    gs_read_csv(sheet2, ws = "Sheet1", col_names = TRUE)
   }
   
   data2<- reactiveValues()
@@ -53,12 +54,14 @@ shinyServer(function(input, output, session) {
       newLine3 <- isolate(c(input$line3,input$author))
       space <- isolate(c(" "," "))
       
-      isolate(data2$df[nrow(data2$df)+1,] <- c(input$line1," "))
-      isolate(data2$df[nrow(data2$df)+1,] <- c(input$line2," "))
-      isolate(data2$df[nrow(data2$df)+1,] <- c(input$line3,input$author))
-      isolate(data2$df[nrow(data2$df)+1,] <- c(" "," "))
+      isolate(data2$df[1,] <- c(input$line1," "))
+      isolate(data2$df[2,] <- c(input$line2," "))
+      isolate(data2$df[3,] <- c(input$line3,input$author))
+      isolate(data2$df[4,] <- c(" "," "))
       isolate(sheet2 <- gs_title(table2))
-      isolate(gs_add_row(sheet2, ws = "Sheet1", input = data2$df))
+      isolate(old_data <- gs_read_csv(sheet2, ws="Sheet1"))
+      isolate(all_data <- bind_rows(data2$df, old_data))
+      isolate(gs_edit_cells(sheet2, ws = "Sheet1", input = all_data, anchor = "A1", col_names = TRUE))
     }
     
   })
@@ -83,6 +86,16 @@ shinyServer(function(input, output, session) {
     input$submit
     loadData2()
   }, na = " ", colnames = FALSE)
+  
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste("haikus-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(loadData(), file, row.names = FALSE)
+    },
+    contentType = "text/csv"
+  )
 
 
 })

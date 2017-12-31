@@ -20,6 +20,7 @@ shinyUI(fluidPage(theme = shinytheme("journal"),
            textInput("line3", label = NULL),
            textInput("author", label = "Author"),
            actionButton("submit", "Submit"),
+           downloadButton("downloadData", "Download"),
            textOutput("line1_text"),
            textOutput("line2_text"),
            textOutput("line3_text")
